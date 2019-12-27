@@ -29,20 +29,101 @@ void load(MicroBitEvent e);
 void save(MicroBitEvent e);
 
 MicroBit uBit;
+int gameLoop = 1;
 
-struct Position
+typedef struct position
 {
     uint8_t x;
     uint8_t y;
-};
 
-struct Position player = {0, 2};
-int gameLoop = 1;
+} Position;
 
-struct Position playerBullets[5];
-int bulletPtr = 0;
+typedef struct node
+{
+    Position *val;
+    struct node *next;
+} Node;
+
+Node *makeNode(Position *bullet, node *next)
+{
+    Node *head = (Node *) malloc(sizeof(Node));
+    if (head == NULL)
+    {
+        exit(0);
+    }
+
+    head->val = bullet;
+    head->next = next;
+    return head;
+}
+
+Position *defaultBullet;
+Node *bulletList = makeNode(defaultBullet, NULL);
 
 
+
+
+
+// node *appendToList(node *list, Position *bullet){
+//     Node *current = list;
+//     while(current->next != NULL){
+//         current = current->next;
+//     }
+//     Node *newNode = makeNode(bullet, NULL);
+//     // newNode->val = bullet;
+//     // newNode->next = NULL;
+//     // // //current = (Node *) malloc(sizeof(Node));
+//     // // newNode->val = bullet;
+//     // // newNode->next = NULL;
+//     // // // current->val = bullet;
+//     // current->next = NULL;
+//     current->next = newNode;
+//     return list;
+// }
+
+node* append(node* head, Position *data)
+{
+    // if(head == NULL)
+    //     return NULL;
+    /* go to the last node */
+    node *cursor = head;
+    while(cursor->next != NULL)
+        cursor = cursor->next;
+ 
+    /* create a new node */
+    node* new_node =  makeNode(data,NULL);
+    cursor->next = new_node;
+ 
+    return head;
+}
+
+void updateBulletlist()
+{
+    Node *currNode;
+    Position *currBullet;
+
+    currNode = bulletList;
+    
+
+    while (currNode != NULL)
+    {
+        currBullet = currNode->val;
+
+        if (currBullet->x < 5)
+        {
+        currBullet->x++;
+        uBit.display.image.setPixelValue(currBullet->x, currBullet->y, 255);
+        }
+        else if (currBullet->x == 5)
+        {
+        //free(playerBullets[i]);
+        //playerBullets[i] = NULL; //freeing bullet from make bullet when position is out of bounds
+        }
+        currNode = currNode->next;
+    }
+}
+
+Position player = {0, 2};
 
 
 void decPlayerY(MicroBitEvent e)
@@ -60,28 +141,34 @@ void incPlayerY(MicroBitEvent e)
     }
 }
 
+void makeBullet(MicroBitEvent e)
+{
+    Position *bullet;
+    bullet = (Position *)malloc(sizeof(Position));
+
+    // Set size and return.
+    bullet->x = player.x;
+    bullet->y = player.y;
+    append(bulletList, bullet);
+}
 
 
 
 
 void spaceInvaders()
 {
-    player.x = 0;
-    player.y = 2;
 
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, incPlayerY);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, decPlayerY);
-    //uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, makeBullet);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, makeBullet);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, save);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, load);
-
-    //create_fiber(updateBullets);
 
     while (gameLoop)
     {
         uBit.display.clear();
-        uBit.display.image.setPixelValue(player.x, player.y, 255);
-        //updateBullets();
+        uBit.display.image.setPixelValue(player.x, player.y, 5);
+        updateBulletlist();
         uBit.sleep(250);
     }
 }
