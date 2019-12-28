@@ -44,12 +44,26 @@ typedef struct node
     struct node *next;
 } Node;
 
-Node *makeNode(Position *bullet, node *next)
+typedef struct enemy
 {
-    Node *head = (Node *) malloc(sizeof(Node));
+    uint8_t type;
+    uint8_t hitpoints;
+    uint8_t speed;
+    uint8_t size;
+    Position *val;
+} Enemy;
+
+uint8_t randomY()
+{
+    return rand() % 5;
+}
+
+Node *makeNode(Position *bullet,Node *next)
+{
+    Node *head = (Node *)malloc(sizeof(Node));
     if (head == NULL)
     {
-        exit(0);
+        exit(1);
     }
 
     head->val = bullet;
@@ -57,43 +71,101 @@ Node *makeNode(Position *bullet, node *next)
     return head;
 }
 
-Position *defaultBullet;
-Node *bulletList = makeNode(defaultBullet, NULL);
+Node *bulletList;
+Enemy *enemyArray[11] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+Position player = {0, 2};
 
-
-
-
-
-// node *appendToList(node *list, Position *bullet){
-//     Node *current = list;
-//     while(current->next != NULL){
-//         current = current->next;
-//     }
-//     Node *newNode = makeNode(bullet, NULL);
-//     // newNode->val = bullet;
-//     // newNode->next = NULL;
-//     // // //current = (Node *) malloc(sizeof(Node));
-//     // // newNode->val = bullet;
-//     // // newNode->next = NULL;
-//     // // // current->val = bullet;
-//     // current->next = NULL;
-//     current->next = newNode;
-//     return list;
-// }
-
-node* append(node* head, Position *data)
+Node *append(Node *head, Position *data)
 {
-    // if(head == NULL)
-    //     return NULL;
+    if (head == NULL)
+    {
+        bulletList = makeNode(data, NULL);
+        return NULL;
+    }
     /* go to the last node */
-    node *cursor = head;
-    while(cursor->next != NULL)
+    Node *cursor = head;
+    while (cursor->next != NULL)
         cursor = cursor->next;
- 
+
     /* create a new node */
-    node* new_node =  makeNode(data,NULL);
+    Node *new_node = makeNode(data, NULL);
     cursor->next = new_node;
- 
+
+    return head;
+}
+
+Node *remove_front(node *head)
+{
+    if (head == NULL)
+        return NULL;
+    Node *front = head;
+    head = head->next;
+    front->next = NULL;
+    /* is this the last node in the list */
+    if (front == head)
+        head = NULL;
+    free(front->val);
+    free(front);
+    return head;
+}
+
+Node *remove_back(Node *head)
+{
+    if (head == NULL)
+        return NULL;
+
+    Node *cursor = head;
+    Node *back = NULL;
+    while (cursor->next != NULL)
+    {
+        back = cursor;
+        cursor = cursor->next;
+    }
+    if (back != NULL)
+        back->next = NULL;
+
+    /* if this is the last node in the list*/
+    if (cursor == head)
+        head = NULL;
+    free(cursor->val);
+    free(cursor);
+
+    return head;
+}
+
+Node *remove_any(Node *head, Node *nd)
+{
+    /* if the node is the first node */
+    if (nd == head)
+    {
+        bulletList = remove_front(head);
+        return head;
+    }
+
+    /* if the node is the last node */
+    if (nd->next == NULL)
+    {
+        bulletList = remove_back(head);
+        return head;
+    }
+
+    /* if the node is in the middle */
+    Node *cursor = head;
+    while (cursor != NULL)
+    {
+        if (cursor->next = nd)
+            break;
+        cursor = cursor->next;
+    }
+
+    if (cursor != NULL)
+    {
+        Node *tmp = cursor->next;
+        cursor->next = tmp->next;
+        tmp->next = NULL;
+        free(tmp->val);
+        free(tmp);
+    }
     return head;
 }
 
@@ -103,28 +175,22 @@ void updateBulletlist()
     Position *currBullet;
 
     currNode = bulletList;
-    
-
     while (currNode != NULL)
     {
         currBullet = currNode->val;
 
         if (currBullet->x < 5)
         {
-        currBullet->x++;
-        uBit.display.image.setPixelValue(currBullet->x, currBullet->y, 255);
+            currBullet->x++;
+            uBit.display.image.setPixelValue(currBullet->x, currBullet->y, 255);
         }
         else if (currBullet->x == 5)
         {
-        //free(playerBullets[i]);
-        //playerBullets[i] = NULL; //freeing bullet from make bullet when position is out of bounds
+            remove_any(bulletList, currNode); //freeing bullet from make bullet when position is out of bounds
         }
         currNode = currNode->next;
     }
 }
-
-Position player = {0, 2};
-
 
 void decPlayerY(MicroBitEvent e)
 {
@@ -145,6 +211,11 @@ void makeBullet(MicroBitEvent e)
 {
     Position *bullet;
     bullet = (Position *)malloc(sizeof(Position));
+    if (bullet == NULL)
+    {
+        printf("malloc failed");
+        exit(1);
+    }
 
     // Set size and return.
     bullet->x = player.x;
@@ -152,7 +223,108 @@ void makeBullet(MicroBitEvent e)
     append(bulletList, bullet);
 }
 
+Enemy* makeEasyEnemy()
+{
+    Enemy *easyEnemy;
+    easyEnemy = (Enemy *)malloc(sizeof(Enemy));
+    if (easyEnemy == NULL)
+    {
+        printf("malloc failed");
+        exit(1);
+    }
+    Position *enemyPos;
+    enemyPos = (Position *)malloc(sizeof(Position));
+    easyEnemy->val = enemyPos;
+    easyEnemy->val->x = 4;
+    easyEnemy->val->y = 4;
+    easyEnemy->val->y = randomY();
+    easyEnemy->hitpoints = 10;
+    easyEnemy->type = 1;
+    easyEnemy->speed = 4;
+    easyEnemy->size = 1;
+    return easyEnemy;
+}
+Enemy* makeTier2Enemy()
+{
+    Enemy *tier2Enemy;
+    tier2Enemy = (Enemy *)malloc(sizeof(Enemy));
+    if (tier2Enemy == NULL)
+    {
+        printf("malloc failed");
+        exit(1);
+    }
+    Position *enemyPos;
+    enemyPos = (Position *)malloc(sizeof(Position));
+    tier2Enemy->val = enemyPos;
+    tier2Enemy->val->x = 4;
+    tier2Enemy->val->y = randomY();
+    tier2Enemy->hitpoints = 15;
+    tier2Enemy->type = 2;
+    tier2Enemy->speed = 3;
+    tier2Enemy->size = 2;
+    return tier2Enemy;
+}
+Enemy* makeTier3Enemy()
+{
+    Enemy *tier3Enemy;
+    tier3Enemy = (Enemy *)malloc(sizeof(Enemy));
+    if (tier3Enemy == NULL)
+    {
+        printf("malloc failed");
+        exit(1);
+    }
+    Position *enemyPos;
+    enemyPos = (Position *)malloc(sizeof(Position));
+    tier3Enemy->val = enemyPos;
+    tier3Enemy->val->x = 4;
+    tier3Enemy->val->y = randomY();
+    tier3Enemy->hitpoints = 20;
+    tier3Enemy->type = 3;
+    tier3Enemy->speed = 2;
+    tier3Enemy->size = 3;
+    return tier3Enemy;
+}
+Enemy* makeBoss()
+{
+    Enemy *boss;
+    boss = (Enemy *)malloc(sizeof(Enemy));
+    if (boss == NULL)
+    {
+        printf("malloc failed");
+        exit(1);
+    }
+    Position *enemyPos;
+    enemyPos = (Position *)malloc(sizeof(Position));
+    boss->val = enemyPos;
+    boss->val->x = 4;
+    boss->val->y = randomY();
+    boss->hitpoints = 40;
+    boss->type = 4;
+    boss->speed = 1;
+    boss->size = 4;
+    return boss;
+}
+void makeEnemies()
+{
+    //enemyArray = (Enemy *)malloc(sizeof(Enemy *) * 11);
 
+    for (int i = 0; i < 11; i++)
+    {   
+        if(i < 4){
+            enemyArray[i] = makeEasyEnemy();
+        }
+        else if(i > 3 && i < 7) {
+            enemyArray[i] = makeTier2Enemy();
+        }
+        else if(i > 6 && i < 10){
+            enemyArray[i] = makeTier3Enemy();
+        }
+        else if(i == 10){
+            enemyArray[i] = makeBoss();
+        }
+        else printf("error making enemies");
+    }
+}
 
 
 void spaceInvaders()
@@ -163,17 +335,19 @@ void spaceInvaders()
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, makeBullet);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, save);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, load);
-
+    makeEnemies();
     while (gameLoop)
     {
         uBit.display.clear();
         uBit.display.image.setPixelValue(player.x, player.y, 5);
+        uBit.display.image.setPixelValue(enemyArray[2]->val->x,enemyArray[2]->val->y, 255);
         updateBulletlist();
         uBit.sleep(250);
     }
 }
 int main()
 {
+    srand(time(NULL));
     uBit.init();
     //uBit.display.scroll("INVADERS!");
     while (1)
