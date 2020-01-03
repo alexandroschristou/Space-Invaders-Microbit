@@ -40,11 +40,11 @@ endfunction()
 # set target-defined definitions
 set(YOTTA_BUILD_YEAR "2020") # UTC year
 set(YOTTA_BUILD_MONTH "1") # UTC month 1-12
-set(YOTTA_BUILD_DAY "2") # UTC day 1-31
-set(YOTTA_BUILD_HOUR "18") # UTC hour 0-24
-set(YOTTA_BUILD_MINUTE "41") # UTC minute 0-59
-set(YOTTA_BUILD_SECOND "39") # UTC second 0-61
-set(YOTTA_BUILD_UUID "c59410c0-ef24-49ef-b275-ca77fbbd7fd9") # unique random UUID for each build
+set(YOTTA_BUILD_DAY "3") # UTC day 1-31
+set(YOTTA_BUILD_HOUR "22") # UTC hour 0-24
+set(YOTTA_BUILD_MINUTE "34") # UTC minute 0-59
+set(YOTTA_BUILD_SECOND "49") # UTC second 0-61
+set(YOTTA_BUILD_UUID "52bb67ff-65cd-4443-9dd8-1a388064fce9") # unique random UUID for each build
 set(YOTTA_BUILD_VCS_ID "c3b02564fd8082f3bf80472e679aa2f9b707c7c2") # git or mercurial hash
 set(YOTTA_BUILD_VCS_CLEAN "0") # evaluates true if the version control system was clean, otherwise false
 set(YOTTA_BUILD_VCS_DESCRIPTION "v2.1.1") # git describe or mercurial equivalent
