@@ -31,7 +31,6 @@ void save(MicroBitEvent e);
 MicroBit uBit;
 int gameLoop = 1;
 uint8_t amountOfLives = 3;
-uint8_t nextFree = 0;
 uint8_t counter = 0;
 
 typedef struct position
@@ -62,12 +61,14 @@ typedef struct enemy
     Position *val;
     uint8_t state;
     uint8_t shoot;
+    uint8_t score;
 } Enemy;
 
 typedef struct player
 {
     uint8_t lives;
     Position pos;
+    uint8_t score;
 } Player;
 
 int randomY()
@@ -96,7 +97,7 @@ Node *makeNode(Bullet *bullet, Node *next)
 Node *bulletList;
 Enemy *enemyArray[11] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 Position playerPos = {0, 2};
-Player player = {3, playerPos};
+Player player = {3, playerPos, 0};
 
 Node *appendToList(Node *head, Bullet *data)
 {
@@ -233,7 +234,6 @@ void updateBulletlist()
 
 void updateEnemies()
 {
-
     for (int i = 0; i < 11; i++)
     {
         Enemy *currEnemy = enemyArray[i];
@@ -321,6 +321,91 @@ void makeEnemyBullet(int xPos, int yPos)
     appendToList(bulletList, bullet);
 }
 
+void incrScore(Enemy *enemy)
+{
+    player.score = player.score + enemy->score;
+}
+void deleteEnemy(Enemy *enemy)
+{
+    for (int i = 0; i < 11; i++)
+    {
+        if (enemyArray[i] == enemy)
+        {
+            free(enemyArray[i]->val);
+            free(enemyArray[i]);
+            enemyArray[i] = NULL;
+        }
+    }
+}
+void decrementGhostPoints(Enemy *enemy)
+{
+    if (enemy->hitpoints > 0)
+    {
+        enemy->hitpoints = enemy->hitpoints - 5;
+    }
+    else
+    {
+        incrScore(enemy);
+        deleteEnemy(enemy);
+    }
+}
+
+void checkCollisionBulletGhost()
+{
+    Node *currNode;
+    currNode = bulletList;
+    while (currNode != NULL)
+    {
+        if (currNode->val->direction == 0)
+        {
+            for (int i = 0; i < 11; i++)
+            {
+                if (enemyArray[i] != NULL)
+                {
+                    switch (enemyArray[i]->size)
+                    {
+                    case 1:
+                        if (enemyArray[i]->val->x == currNode->val->pos->x && enemyArray[i]->val->y == currNode->val->pos->y)
+                        {
+                            decrementGhostPoints(enemyArray[i]);
+                            remove_any(bulletList, currNode);
+                        }
+                        break;
+                    case 2:
+                        if (enemyArray[i]->val->x == currNode->val->pos->x && (currNode->val->pos->y == enemyArray[i]->val->y || currNode->val->pos->y == (enemyArray[i]->val->y + 1)))
+                        {
+                            decrementGhostPoints(enemyArray[i]);
+                            remove_any(bulletList, currNode);
+                        }
+                        break;
+                    case 3:
+                        if (enemyArray[i]->val->x == currNode->val->pos->x)
+                        {
+                            if ((currNode->val->pos->y >= enemyArray[i]->val->y) && (currNode->val->pos->y <= (enemyArray[i]->val->y + 3 - 1)))
+                            {
+                                decrementGhostPoints(enemyArray[i]);
+                                remove_any(bulletList, currNode);
+                            }
+                        }
+                        break;
+                    case 4:
+                        if (enemyArray[i]->val->x == currNode->val->pos->x)
+                        {
+                            if ((currNode->val->pos->y >= enemyArray[i]->val->y) && (currNode->val->pos->y <= (enemyArray[i]->val->y + 4 - 1)))
+                            {
+                                decrementGhostPoints(enemyArray[i]);
+                                remove_any(bulletList, currNode);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        currNode = currNode->next;
+    }
+}
+
 Enemy *makeEasyEnemy()
 {
     Enemy *easyEnemy;
@@ -334,14 +419,14 @@ Enemy *makeEasyEnemy()
     enemyPos = (Position *)malloc(sizeof(Position));
     easyEnemy->val = enemyPos;
     easyEnemy->val->x = 5;
-    easyEnemy->val->y = 4;
     easyEnemy->val->y = randomY();
-    easyEnemy->hitpoints = 10;
+    easyEnemy->hitpoints = 5;
     easyEnemy->type = 1;
     easyEnemy->speed = 10;
     easyEnemy->size = 1;
     easyEnemy->state = 1;
     easyEnemy->shoot = 20;
+    easyEnemy->score = 2;
     return easyEnemy;
 }
 Enemy *makeTier2Enemy()
@@ -358,12 +443,13 @@ Enemy *makeTier2Enemy()
     tier2Enemy->val = enemyPos;
     tier2Enemy->val->x = 5;
     tier2Enemy->val->y = randomY();
-    tier2Enemy->hitpoints = 15;
+    tier2Enemy->hitpoints = 5;
     tier2Enemy->type = 2;
     tier2Enemy->speed = 15;
     tier2Enemy->size = 2;
     tier2Enemy->state = 1;
     tier2Enemy->shoot = 15;
+    tier2Enemy->score = 4;
     return tier2Enemy;
 }
 Enemy *makeTier3Enemy()
@@ -380,12 +466,13 @@ Enemy *makeTier3Enemy()
     tier3Enemy->val = enemyPos;
     tier3Enemy->val->x = 5;
     tier3Enemy->val->y = randomY();
-    tier3Enemy->hitpoints = 20;
+    tier3Enemy->hitpoints = 15;
     tier3Enemy->type = 3;
     tier3Enemy->speed = 20;
     tier3Enemy->size = 3;
     tier3Enemy->state = 1;
     tier3Enemy->shoot = 10;
+    tier3Enemy->score = 6;
     return tier3Enemy;
 }
 Enemy *makeBoss()
@@ -402,19 +489,22 @@ Enemy *makeBoss()
     boss->val = enemyPos;
     boss->val->x = 5;
     boss->val->y = randomY();
-    boss->hitpoints = 40;
+    boss->hitpoints = 25;
     boss->type = 4;
     boss->speed = 1;
     boss->size = 4;
     boss->state = 1;
     boss->shoot = 5;
+    boss->score = 10;
     return boss;
 }
 void makeEnemy()
 {
     if (counter % 25 == 0)
-    {
-        if (nextFree != 10)
+    {   int nextFree = 0;
+        for(nextFree; enemyArray[nextFree] != NULL; nextFree++);
+
+        if (nextFree <= 10)
         {
             int type = uBit.random(3);
             switch (type)
@@ -430,7 +520,7 @@ void makeEnemy()
                 break;
             }
         }
-        nextFree++;
+        // nextFree++;
     }
 }
 void drawField()
@@ -452,12 +542,14 @@ void drawField()
         }
     }
 }
-void shootEnemy(){
+void shootEnemy()
+{
     for (int i = 0; i < 11; i++)
     {
         if (enemyArray[i] != NULL)
         {
-            if(counter % enemyArray[i]->shoot == 0){
+            if (counter % enemyArray[i]->shoot == 0)
+            {
                 makeEnemyBullet(enemyArray[i]->val->x, enemyArray[i]->val->y);
             }
         }
@@ -480,6 +572,7 @@ void spaceInvaders()
         }
         else
             counter = 0;
+        checkCollisionBulletGhost();
         makeEnemy();
         shootEnemy();
         updateBulletlist();
