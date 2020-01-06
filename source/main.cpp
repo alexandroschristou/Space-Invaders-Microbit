@@ -32,6 +32,7 @@ MicroBit uBit;
 int gameLoop = 1;
 uint8_t amountOfLives = 3;
 uint8_t counter = 0;
+uint8_t enemyKilled = 0;
 
 typedef struct position
 {
@@ -68,18 +69,15 @@ typedef struct player
 {
     uint8_t lives;
     Position pos;
-    uint8_t score;
+    uint16_t score;
 } Player;
 
 int randomY()
 {
     return uBit.random(5);
 }
-
-void endGame()
-{
-    uBit.display.scroll("U Lost!");
-}
+Node *bulletList;
+Enemy *enemyArray[15] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 Node *makeNode(Bullet *bullet, Node *next)
 {
@@ -94,8 +92,6 @@ Node *makeNode(Bullet *bullet, Node *next)
     return head;
 }
 
-Node *bulletList;
-Enemy *enemyArray[11] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 Position playerPos = {0, 2};
 Player player = {3, playerPos, 0};
 
@@ -191,6 +187,27 @@ Node *remove_any(Node *head, Node *nd)
         free(tmp);
     }
     return head;
+}
+
+void endGame()
+{
+    uBit.display.scroll("U Lost!");
+    Node *currNode;
+    Bullet *currBullet;
+    for (int i = 0; i < 11; i++)
+    {
+        if (enemyArray[i] != NULL)
+        {
+            free(enemyArray[i]->val);
+            free(enemyArray[i]);
+            enemyArray[i] = NULL;
+        }
+    }
+    while (bulletList != NULL)
+    {
+        remove_front(bulletList);
+    }
+    gameLoop = 0;
 }
 
 void updateBulletlist()
@@ -418,7 +435,7 @@ Enemy *makeEasyEnemy()
     Position *enemyPos;
     enemyPos = (Position *)malloc(sizeof(Position));
     easyEnemy->val = enemyPos;
-    easyEnemy->val->x = 5;
+    easyEnemy->val->x = 4;
     easyEnemy->val->y = randomY();
     easyEnemy->hitpoints = 5;
     easyEnemy->type = 1;
@@ -441,7 +458,7 @@ Enemy *makeTier2Enemy()
     Position *enemyPos;
     enemyPos = (Position *)malloc(sizeof(Position));
     tier2Enemy->val = enemyPos;
-    tier2Enemy->val->x = 5;
+    tier2Enemy->val->x = 4;
     tier2Enemy->val->y = randomY();
     tier2Enemy->hitpoints = 5;
     tier2Enemy->type = 2;
@@ -464,7 +481,7 @@ Enemy *makeTier3Enemy()
     Position *enemyPos;
     enemyPos = (Position *)malloc(sizeof(Position));
     tier3Enemy->val = enemyPos;
-    tier3Enemy->val->x = 5;
+    tier3Enemy->val->x = 4;
     tier3Enemy->val->y = randomY();
     tier3Enemy->hitpoints = 15;
     tier3Enemy->type = 3;
@@ -487,7 +504,7 @@ Enemy *makeBoss()
     Position *enemyPos;
     enemyPos = (Position *)malloc(sizeof(Position));
     boss->val = enemyPos;
-    boss->val->x = 5;
+    boss->val->x = 4;
     boss->val->y = randomY();
     boss->hitpoints = 25;
     boss->type = 4;
@@ -501,13 +518,21 @@ Enemy *makeBoss()
 void makeEnemy()
 {
     if (counter % 25 == 0)
-    {   int nextFree = 0;
-        for(nextFree; enemyArray[nextFree] != NULL; nextFree++);
-
+    {
+        int nextFree = 0;
+        for (int i = 0; i < 11; i++)
+        {
+            if (enemyArray[i] == NULL)
+            {
+                nextFree = i;
+                break;
+            }
+        }
+        //for (nextFree; enemyArray[nextFree] != NULL; nextFree++);
         if (nextFree <= 10)
         {
             int type = uBit.random(3);
-            switch (type)
+            switch (0)
             {
             case 0:
                 enemyArray[nextFree] = makeEasyEnemy();
@@ -520,7 +545,6 @@ void makeEnemy()
                 break;
             }
         }
-        // nextFree++;
     }
 }
 void drawField()
@@ -572,13 +596,14 @@ void spaceInvaders()
         }
         else
             counter = 0;
-        checkCollisionBulletGhost();
         makeEnemy();
         shootEnemy();
         updateBulletlist();
+        checkCollisionBulletGhost();
         updateEnemies();
         uBit.sleep(250);
     }
+    uBit.display.scroll("score");
 }
 int main()
 {
@@ -591,12 +616,38 @@ int main()
     release_fiber();
 }
 
+uint8_t encodePlayer(Player player){
+    uint8_t shifted_lives = player.lives;
+    uint8_t shifted_pos_y = player.pos.y << 2;
+
+    uint8_t savedPlayer;
+    savedPlayer = shifted_lives | shifted_pos_y;
+    return savedPlayer;
+}
+uint16_t encodePlayerPosition(Player player){
+    uint16_t shifted_score = player.score;
+    return shifted_score;
+}
+
+void decode_person(uint8_t *saved_person){
+    uint8_t bitmask_pos_y = 0b00001100;
+    uint8_t bitmask_lives= 0b00000011;
+    uint16_t bitmask_score= 0b1111111111111111;
+    uint8_t saved_person_y_lives = saved_person+sizeof(uint8_t);
+    uint16_t saved_person_score = saved_person+sizeof(uint8_t);
+    player.lives = (saved_person_y_lives & bitmask_lives);
+    player.pos.y = (saved_person_y_lives & bitmask_pos_y) >> 2;
+    player.score = (saved_person_score & bitmask_score);
+}
+
+
+
 void save(MicroBitEvent e)
 {
-    int save_data_size = 2 * sizeof(uint8_t);
+    int save_data_size = 3 * sizeof(uint8_t);
     uint8_t *save_data = (uint8_t *)malloc(save_data_size);
-    save_data[0] = player.pos.x;
-    save_data[1] = player.pos.y;
+    save_data[0] = encodePlayer(player);
+    save_data[1] = encodePlayerPosition(player);
     int result = uBit.storage.put("save", save_data, save_data_size);
     switch (result)
     {
@@ -614,12 +665,17 @@ void save(MicroBitEvent e)
 
 void load(MicroBitEvent e)
 {
+    //long long double
     KeyValuePair *loaded = uBit.storage.get("save");
+    uint8_t *savedArray;
     if (loaded != NULL)
     {
+        memcpy(&savedArray, loaded->value, sizeof(uint8_t));
         uint8_t *save_data = loaded->value;
-        player.pos.x = save_data[0];
-        player.pos.y = save_data[1];
+        decode_person(savedArray);
+        // uint8_t *save_data = loaded->value;
+        // player.pos.x = save_data[0];
+        // player.pos.y = save_data[1];
     }
     delete loaded;
 }

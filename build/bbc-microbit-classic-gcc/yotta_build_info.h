@@ -3,11 +3,11 @@
 // yotta build info, #include YOTTA_BUILD_INFO_HEADER to access
 #define YOTTA_BUILD_YEAR 2020 // UTC year
 #define YOTTA_BUILD_MONTH 1 // UTC month 1-12
-#define YOTTA_BUILD_DAY 5 // UTC day 1-31
-#define YOTTA_BUILD_HOUR 21 // UTC hour 0-24
-#define YOTTA_BUILD_MINUTE 42 // UTC minute 0-59
-#define YOTTA_BUILD_SECOND 21 // UTC second 0-61
-#define YOTTA_BUILD_UUID 0b6521ea-5fdf-40ab-9cb3-d6d8afc19c2c // unique random UUID for each build
+#define YOTTA_BUILD_DAY 6 // UTC day 1-31
+#define YOTTA_BUILD_HOUR 22 // UTC hour 0-24
+#define YOTTA_BUILD_MINUTE 12 // UTC minute 0-59
+#define YOTTA_BUILD_SECOND 17 // UTC second 0-61
+#define YOTTA_BUILD_UUID aecdabfa-959c-469a-ace3-ea4d06d6fd95 // unique random UUID for each build
 #define YOTTA_BUILD_VCS_ID c3b02564fd8082f3bf80472e679aa2f9b707c7c2 // git or mercurial hash
 #define YOTTA_BUILD_VCS_CLEAN 0 // evaluates true if the version control system was clean, otherwise false
 #define YOTTA_BUILD_VCS_DESCRIPTION v2.1.1 // git describe or mercurial equivalent
