@@ -32,7 +32,7 @@ MicroBit uBit;
 uint8_t gameLoop = 1;
 uint8_t amountOfLives = 3;
 uint8_t counter = 0;
-uint8_t enemyCounter = 2;
+uint8_t enemyCounter = 10;
 uint8_t bossVar = 0;
 
 typedef struct position
@@ -94,7 +94,7 @@ Node *makeNode(Bullet *bullet, Node *next)
 }
 
 Position playerPos = {0, 2};
-Player player = {3, playerPos, 0};
+Player player = {10, playerPos, 0};
 
 Node *appendToList(Node *head, Bullet *data)
 {
@@ -223,6 +223,7 @@ void endGame()
         bulletList = deleteList();
     }
     uBit.display.scroll("U LOST!");
+    //uBit.display.scroll(player.score);
     gameLoop = 0;
 }
 
@@ -267,7 +268,8 @@ void updateBulletlist()
 
 void deleteEnemy(Enemy *enemy)
 {
-    if (enemy->type == 4){
+    if (enemy->type == 4)
+    {
         enemyCounter = 10;
         bossVar = 0;
     }
@@ -290,29 +292,26 @@ void updateEnemies()
         Enemy *currEnemy = enemyArray[i];
         if (currEnemy != NULL)
         {
-            if (counter % currEnemy->speed == 0)
+            if (currEnemy->speed != 0)
             {
-                if (currEnemy->val->x > 0)
+                if (counter % currEnemy->speed == 0)
                 {
-                    currEnemy->val->x--;
-                }
-                else
-                {
-                    if (player.lives == 0)
+                    if (currEnemy->val->x > 0)
                     {
-                        endGame(); //end game if player has no more life
+                        currEnemy->val->x--;
                     }
                     else
                     {
-                        player.lives--;           //decrement lives
-                        // if(enemyArray[i]->type == 4){
-                        //     bossVar = 0;
-                        //     enemyCounter = 10;
-                        // }
-                        deleteEnemy(enemyArray[i]);
-                        // free(enemyArray[i]->val); //free enemy position and enemy
-                        // free(enemyArray[i]);
-                        // enemyArray[i] = NULL;
+                        if (player.lives == 0)
+                        {
+                            endGame(); //end game if player has no more life
+                            break;
+                        }
+                        else
+                        {
+                            player.lives--;
+                            deleteEnemy(enemyArray[i]); //decrement lives and delete enemy
+                        }
                     }
                 }
             }
@@ -462,6 +461,7 @@ void checkCollisionBulletPlayer()
                 if (player.lives == 0)
                 {
                     endGame();
+                    break;
                 }
                 else
                 {
@@ -584,7 +584,7 @@ Enemy *makeBoss()
     boss->val->y = 1; //randomY();
     boss->hitpoints = 25;
     boss->type = 4;
-    boss->speed = 30;
+    boss->speed = 0;
     boss->size = 4;
     boss->state = 1;
     boss->shoot = 5;
@@ -622,7 +622,7 @@ void makeEnemy()
             }
         }
         else if (enemyCounter == 0)
-        {
+        { if(counter % 100 == 0)
             enemyArray[nextFree] = makeBoss();
         }
     }

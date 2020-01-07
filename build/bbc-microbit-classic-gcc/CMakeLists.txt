@@ -42,9 +42,9 @@ set(YOTTA_BUILD_YEAR "2020") # UTC year
 set(YOTTA_BUILD_MONTH "1") # UTC month 1-12
 set(YOTTA_BUILD_DAY "7") # UTC day 1-31
 set(YOTTA_BUILD_HOUR "17") # UTC hour 0-24
-set(YOTTA_BUILD_MINUTE "18") # UTC minute 0-59
-set(YOTTA_BUILD_SECOND "12") # UTC second 0-61
-set(YOTTA_BUILD_UUID "55cb8036-bfeb-43b4-b491-fd058153fa70") # unique random UUID for each build
+set(YOTTA_BUILD_MINUTE "46") # UTC minute 0-59
+set(YOTTA_BUILD_SECOND "26") # UTC second 0-61
+set(YOTTA_BUILD_UUID "0bd744ce-f9e9-4611-8201-a504ce85f24d") # unique random UUID for each build
 set(YOTTA_BUILD_VCS_ID "c3b02564fd8082f3bf80472e679aa2f9b707c7c2") # git or mercurial hash
 set(YOTTA_BUILD_VCS_CLEAN "0") # evaluates true if the version control system was clean, otherwise false
 set(YOTTA_BUILD_VCS_DESCRIPTION "v2.1.1") # git describe or mercurial equivalent
