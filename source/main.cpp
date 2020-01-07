@@ -29,10 +29,11 @@ void load(MicroBitEvent e);
 void save(MicroBitEvent e);
 
 MicroBit uBit;
-int gameLoop = 1;
+uint8_t gameLoop = 1;
 uint8_t amountOfLives = 3;
 uint8_t counter = 0;
-uint8_t enemyKilled = 0;
+uint8_t enemyCounter = 2;
+uint8_t bossVar = 0;
 
 typedef struct position
 {
@@ -264,6 +265,24 @@ void updateBulletlist()
     }
 }
 
+void deleteEnemy(Enemy *enemy)
+{
+    if (enemy->type == 4){
+        enemyCounter = 10;
+        bossVar = 0;
+    }
+    for (int i = 0; i < 15; i++)
+    {
+        if (enemyArray[i] == enemy)
+        {
+            free(enemyArray[i]->val);
+            free(enemyArray[i]);
+            enemyArray[i] = NULL;
+            enemyCounter--;
+        }
+    }
+}
+
 void updateEnemies()
 {
     for (int i = 0; i < 15; i++)
@@ -277,7 +296,6 @@ void updateEnemies()
                 {
                     currEnemy->val->x--;
                 }
-
                 else
                 {
                     if (player.lives == 0)
@@ -287,9 +305,14 @@ void updateEnemies()
                     else
                     {
                         player.lives--;           //decrement lives
-                        free(enemyArray[i]->val); //free enemy position and enemy
-                        free(enemyArray[i]);
-                        enemyArray[i] = NULL;
+                        // if(enemyArray[i]->type == 4){
+                        //     bossVar = 0;
+                        //     enemyCounter = 10;
+                        // }
+                        deleteEnemy(enemyArray[i]);
+                        // free(enemyArray[i]->val); //free enemy position and enemy
+                        // free(enemyArray[i]);
+                        // enemyArray[i] = NULL;
                     }
                 }
             }
@@ -357,18 +380,7 @@ void incrScore(Enemy *enemy)
 {
     player.score = player.score + enemy->score;
 }
-void deleteEnemy(Enemy *enemy)
-{
-    for (int i = 0; i < 15; i++)
-    {
-        if (enemyArray[i] == enemy)
-        {
-            free(enemyArray[i]->val);
-            free(enemyArray[i]);
-            enemyArray[i] = NULL;
-        }
-    }
-}
+
 void decrementGhostPoints(Enemy *enemy)
 {
     if (enemy->hitpoints > 0)
@@ -507,7 +519,7 @@ Enemy *makeEasyEnemy()
     easyEnemy->size = 1;
     easyEnemy->state = 1;
     easyEnemy->shoot = 20;
-    easyEnemy->score = 2;
+    easyEnemy->score = 1;
     return easyEnemy;
 }
 Enemy *makeTier2Enemy()
@@ -530,7 +542,7 @@ Enemy *makeTier2Enemy()
     tier2Enemy->size = 2;
     tier2Enemy->state = 1;
     tier2Enemy->shoot = 15;
-    tier2Enemy->score = 4;
+    tier2Enemy->score = 2;
     return tier2Enemy;
 }
 Enemy *makeTier3Enemy()
@@ -553,7 +565,7 @@ Enemy *makeTier3Enemy()
     tier3Enemy->size = 3;
     tier3Enemy->state = 1;
     tier3Enemy->shoot = 10;
-    tier3Enemy->score = 6;
+    tier3Enemy->score = 3;
     return tier3Enemy;
 }
 Enemy *makeBoss()
@@ -569,19 +581,20 @@ Enemy *makeBoss()
     enemyPos = (Position *)malloc(sizeof(Position));
     boss->val = enemyPos;
     boss->val->x = 4;
-    boss->val->y = randomY();
+    boss->val->y = 1; //randomY();
     boss->hitpoints = 25;
     boss->type = 4;
-    boss->speed = 1;
+    boss->speed = 30;
     boss->size = 4;
     boss->state = 1;
     boss->shoot = 5;
-    boss->score = 10;
+    boss->score = 4;
+    bossVar = 1;
     return boss;
 }
 void makeEnemy()
 {
-    if (counter % 25 == 0)
+    if (counter % 25 == 0 && bossVar == 0)
     {
         int nextFree = 0;
         for (int i = 0; i < 15; i++)
@@ -592,7 +605,7 @@ void makeEnemy()
                 break;
             }
         }
-        if (nextFree < 15)
+        if (nextFree < 15 && enemyCounter != 0)
         {
             int type = uBit.random(3);
             switch (type)
@@ -607,6 +620,10 @@ void makeEnemy()
                 enemyArray[nextFree] = makeTier3Enemy();
                 break;
             }
+        }
+        else if (enemyCounter == 0)
+        {
+            enemyArray[nextFree] = makeBoss();
         }
     }
 }
@@ -671,7 +688,7 @@ void spaceInvaders()
         updateEnemies();
         uBit.sleep(250);
     }
-    uBit.display.scroll("SCORE");
+    uBit.display.scroll(player.score);
 }
 int main()
 {
