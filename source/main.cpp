@@ -114,6 +114,20 @@ Node *appendToList(Node *head, Bullet *data)
     return head;
 }
 
+Node *deleteList()
+{
+    Node *head;
+    head = bulletList;
+    while (head != NULL)
+    {
+        free(head->val->pos);
+        free(head->val);
+        free(head);
+        head = head->next;
+    }
+    return head;
+}
+
 Node *remove_front(node *head)
 {
     if (head == NULL)
@@ -124,6 +138,7 @@ Node *remove_front(node *head)
     /* is this the last node in the list */
     if (front == head)
         head = NULL;
+    free(front->val->pos);
     free(front->val);
     free(front);
     return head;
@@ -147,6 +162,7 @@ Node *remove_back(Node *head)
     /* if this is the last node in the list*/
     if (cursor == head)
         head = NULL;
+    free(cursor->val->pos);
     free(cursor->val);
     free(cursor);
 
@@ -183,6 +199,7 @@ Node *remove_any(Node *head, Node *nd)
         Node *tmp = cursor->next;
         cursor->next = tmp->next;
         tmp->next = NULL;
+        free(tmp->val->pos);
         free(tmp->val);
         free(tmp);
     }
@@ -191,10 +208,7 @@ Node *remove_any(Node *head, Node *nd)
 
 void endGame()
 {
-    uBit.display.scroll("U Lost!");
-    Node *currNode;
-    Bullet *currBullet;
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 15; i++)
     {
         if (enemyArray[i] != NULL)
         {
@@ -205,8 +219,9 @@ void endGame()
     }
     while (bulletList != NULL)
     {
-        remove_front(bulletList);
+        bulletList = deleteList();
     }
+    uBit.display.scroll("U LOST!");
     gameLoop = 0;
 }
 
@@ -251,7 +266,7 @@ void updateBulletlist()
 
 void updateEnemies()
 {
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 15; i++)
     {
         Enemy *currEnemy = enemyArray[i];
         if (currEnemy != NULL)
@@ -317,7 +332,7 @@ void makeBullet(MicroBitEvent e)
     appendToList(bulletList, bullet);
 }
 
-void makeEnemyBullet(int xPos, int yPos)
+void makeEnemyBullet(uint8_t xPos, uint8_t yPos)
 {
 
     Bullet *bullet;
@@ -344,7 +359,7 @@ void incrScore(Enemy *enemy)
 }
 void deleteEnemy(Enemy *enemy)
 {
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 15; i++)
     {
         if (enemyArray[i] == enemy)
         {
@@ -375,7 +390,7 @@ void checkCollisionBulletGhost()
     {
         if (currNode->val->direction == 0)
         {
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 15; i++)
             {
                 if (enemyArray[i] != NULL)
                 {
@@ -420,6 +435,55 @@ void checkCollisionBulletGhost()
             }
         }
         currNode = currNode->next;
+    }
+}
+void checkCollisionBulletPlayer()
+{
+    Node *currNode;
+    currNode = bulletList;
+    while (currNode != NULL)
+    {
+        if (currNode->val->direction == 1)
+        {
+            if (currNode->val->pos->x == player.pos.x && currNode->val->pos->y == player.pos.y)
+            {
+                if (player.lives == 0)
+                {
+                    endGame();
+                }
+                else
+                {
+                    player.lives--;
+                    remove_any(bulletList, currNode);
+                }
+            }
+        }
+        currNode = currNode->next;
+    }
+}
+
+void checkCollisionBetweenBullets()
+{
+    Node *currNodePlayer;
+    currNodePlayer = bulletList;
+    Node *currNodeEnemy;
+    currNodeEnemy = bulletList;
+
+    while (currNodePlayer != NULL)
+    {
+        if (currNodePlayer->val->direction == 0)
+        {
+            while (currNodeEnemy != NULL)
+            {
+                if (currNodeEnemy->val->direction == 1 && currNodePlayer->val->pos->x == currNodeEnemy->val->pos->x && currNodePlayer->val->pos->y == currNodeEnemy->val->pos->y)
+                {
+                    remove_any(bulletList, currNodeEnemy);
+                    remove_any(bulletList, currNodePlayer);
+                }
+                currNodeEnemy = currNodeEnemy->next;
+            }
+        }
+        currNodePlayer = currNodePlayer->next;
     }
 }
 
@@ -520,7 +584,7 @@ void makeEnemy()
     if (counter % 25 == 0)
     {
         int nextFree = 0;
-        for (int i = 0; i < 11; i++)
+        for (int i = 0; i < 15; i++)
         {
             if (enemyArray[i] == NULL)
             {
@@ -528,11 +592,10 @@ void makeEnemy()
                 break;
             }
         }
-        //for (nextFree; enemyArray[nextFree] != NULL; nextFree++);
-        if (nextFree <= 10)
+        if (nextFree < 15)
         {
             int type = uBit.random(3);
-            switch (0)
+            switch (type)
             {
             case 0:
                 enemyArray[nextFree] = makeEasyEnemy();
@@ -558,17 +621,20 @@ void drawField()
         uBit.display.image.setPixelValue(currNode->val->pos->x, currNode->val->pos->y, 255);
         currNode = currNode->next;
     }
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 15; i++)
     {
         if (enemyArray[i] != NULL)
         {
-            uBit.display.image.setPixelValue(enemyArray[i]->val->x, enemyArray[i]->val->y, 255);
+            for (int a = 0; a < enemyArray[i]->size; a++)
+            {
+                uBit.display.image.setPixelValue(enemyArray[i]->val->x, enemyArray[i]->val->y + a, 255);
+            }
         }
     }
 }
 void shootEnemy()
 {
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 15; i++)
     {
         if (enemyArray[i] != NULL)
         {
@@ -600,10 +666,12 @@ void spaceInvaders()
         shootEnemy();
         updateBulletlist();
         checkCollisionBulletGhost();
+        checkCollisionBulletPlayer();
+        checkCollisionBetweenBullets();
         updateEnemies();
         uBit.sleep(250);
     }
-    uBit.display.scroll("score");
+    uBit.display.scroll("SCORE");
 }
 int main()
 {
@@ -616,7 +684,8 @@ int main()
     release_fiber();
 }
 
-uint8_t encodePlayer(Player player){
+uint8_t encodePlayer(Player player)
+{
     uint8_t shifted_lives = player.lives;
     uint8_t shifted_pos_y = player.pos.y << 2;
 
@@ -624,23 +693,23 @@ uint8_t encodePlayer(Player player){
     savedPlayer = shifted_lives | shifted_pos_y;
     return savedPlayer;
 }
-uint16_t encodePlayerPosition(Player player){
+uint16_t encodePlayerPosition(Player player)
+{
     uint16_t shifted_score = player.score;
     return shifted_score;
 }
 
-void decode_person(uint8_t *saved_person){
-    uint8_t bitmask_pos_y = 0b00001100;
-    uint8_t bitmask_lives= 0b00000011;
-    uint16_t bitmask_score= 0b1111111111111111;
-    uint8_t saved_person_y_lives = saved_person+sizeof(uint8_t);
-    uint16_t saved_person_score = saved_person+sizeof(uint8_t);
-    player.lives = (saved_person_y_lives & bitmask_lives);
-    player.pos.y = (saved_person_y_lives & bitmask_pos_y) >> 2;
-    player.score = (saved_person_score & bitmask_score);
+void decode_person(uint8_t *saved_person)
+{
+    // uint8_t bitmask_pos_y = 0b00001100;
+    // uint8_t bitmask_lives = 0b00000011;
+    // uint16_t bitmask_score = 0b1111111111111111;
+    // uint8_t saved_person_y_lives = saved_person + sizeof(uint8_t);
+    // uint16_t saved_person_score = saved_person + sizeof(uint8_t);
+    // player.lives = (saved_person_y_lives & bitmask_lives);
+    // player.pos.y = (saved_person_y_lives & bitmask_pos_y) >> 2;
+    // player.score = (saved_person_score & bitmask_score);
 }
-
-
 
 void save(MicroBitEvent e)
 {
